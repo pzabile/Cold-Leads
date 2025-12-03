@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import { extractLeadsFromFile } from './services/geminiService';
 import { Lead, ProcessingStatus } from './types';
 import LeadTable from './components/LeadTable';
-import { Upload, FileSpreadsheet, Sparkles, Loader2, AlertCircle, Layers, Settings } from 'lucide-react';
+import { Upload, FileSpreadsheet, Loader2, AlertCircle, Layers, Settings } from 'lucide-react';
 
 const App: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -201,10 +201,7 @@ const App: React.FC = () => {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-accent-cyan to-blue-600 rounded-lg shadow-lg shadow-accent-cyan/20">
-                 <Sparkles className="w-6 h-6 text-navy-900" />
-              </div>
-              <h1 className="text-3xl font-bold text-white tracking-tight">Cold Leads Inbox</h1>
+              <h1 className="text-3xl font-bold text-white tracking-tight">BENUX CORP COLD LEADS</h1>
             </div>
             <p className="text-slate-400 mt-2 text-sm ml-1">AI-Powered Driver Extraction & Outreach Compliance</p>
           </div>
