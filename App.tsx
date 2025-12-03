@@ -25,26 +25,26 @@ const App: React.FC = () => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
+      // Handle Images
       if (file.type.startsWith("image/")) {
         reader.onload = () => {
           const result = reader.result as string;
+          // Extract base64 part
           const base64Data = result.split(',')[1];
           resolve({ content: base64Data, mimeType: file.type });
         };
+        reader.onerror = () => reject(new Error(`Failed to read image: ${file.name}`));
         reader.readAsDataURL(file);
-      } else if (
-        file.type === "text/csv" || 
-        file.type === "text/plain" || 
-        file.name.endsWith('.csv') || 
-        file.name.endsWith('.txt')
-      ) {
-        reader.onload = () => resolve({ content: reader.result as string, mimeType: "text/plain" });
-        reader.readAsText(file);
-      } else {
-        reject(new Error(`Unsupported file type: ${file.name}`));
+        return;
       }
-      
-      reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
+
+      // Handle Text/CSV - Logic relaxed to catch files with missing/odd mime types
+      // If it's not an image, we try to read it as text.
+      reader.onload = () => {
+        resolve({ content: reader.result as string, mimeType: "text/plain" });
+      };
+      reader.onerror = () => reject(new Error(`Failed to read text file: ${file.name}`));
+      reader.readAsText(file);
     });
   };
 
@@ -73,7 +73,7 @@ const App: React.FC = () => {
           // Pass campaign settings to extraction service
           const extractedData = await extractLeadsFromFile(content, mimeType, senderName, companyName);
           
-          if (extractedData.length === 0) {
+          if (!extractedData || extractedData.length === 0) {
             console.warn(`No leads found in ${file.name}`);
             return [];
           }
@@ -100,10 +100,11 @@ const App: React.FC = () => {
       // Flatten results
       results.forEach(batch => newLeadsAccumulator.push(...batch));
 
+      // Error handling logic
       if (newLeadsAccumulator.length === 0 && errors.length > 0) {
-        throw new Error(`Failed to extract leads from uploaded files. Errors: ${errors.join(' | ')}`);
+        throw new Error(`Failed to extract leads. Errors: ${errors.join(' | ')}`);
       } else if (newLeadsAccumulator.length === 0) {
-        throw new Error("No valid leads found in the uploaded files.");
+        throw new Error("No valid leads found (checked for mobile numbers only).");
       }
 
       // --- Robust Duplicate Detection ---
@@ -135,6 +136,7 @@ const App: React.FC = () => {
       setStatus(ProcessingStatus.ERROR);
       setErrorMsg(err.message || "An unexpected error occurred.");
     } finally {
+      // Clear status after delay so user sees the result
       setTimeout(() => setStatus(ProcessingStatus.IDLE), 4000);
     }
   };

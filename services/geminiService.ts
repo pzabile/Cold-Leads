@@ -84,6 +84,15 @@ For EACH extracted driver, generate a **COMPLETELY UNIQUE** 'outreachMessage'.
 };
 
 /**
+ * Helper to clean Markdown wrappers from JSON string.
+ */
+const cleanJsonOutput = (text: string) => {
+  if (!text) return "[]";
+  // Remove markdown code blocks (```json ... ```)
+  return text.replace(/```json/g, '').replace(/```/g, '').trim();
+};
+
+/**
  * Processes a file (Image or Text) to extract leads using Gemini.
  * @param fileContent Base64 string (for images) or raw text string
  * @param mimeType Mime type of the file
@@ -112,7 +121,7 @@ export const extractLeadsFromFile = async (
             },
           },
           {
-            text: "Extract the driver list from this image.",
+            text: "Extract the driver list from this image. Return valid JSON.",
           },
         ],
       };
@@ -133,19 +142,23 @@ export const extractLeadsFromFile = async (
         systemInstruction: getSystemInstruction(senderName, companyName),
         responseMimeType: "application/json",
         responseSchema: RESPONSE_SCHEMA,
-        temperature: 1.3, // Very high temperature for maximum variety in syntax and job details
+        temperature: 1.2, // Balanced for variety (SMS) and structural stability (JSON)
       },
       contents: contents,
     });
 
-    const textOutput = response.text;
+    let textOutput = response.text;
     if (!textOutput) return [];
+
+    // Sanitize the output before parsing
+    textOutput = cleanJsonOutput(textOutput);
 
     const parsedData = JSON.parse(textOutput) as ExtractedData[];
     return parsedData;
 
   } catch (error) {
     console.error("Gemini Extraction Error:", error);
-    throw new Error("Failed to extract data from the provided file.");
+    // Throwing here allows App.tsx to catch it and display the red error box
+    throw new Error("Failed to extract data. The file might be unclear or the AI could not find valid leads.");
   }
 };
